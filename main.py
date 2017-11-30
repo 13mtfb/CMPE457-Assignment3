@@ -36,6 +36,9 @@ def compress( inputFile, outputFile ):
 
   img = netpbm.imread( inputFile ).astype('uint8')
   
+  print img.shape
+  print img[0,0,2]
+  
   # Compress the image
   #
   # REPLACE THIS WITH YOUR OWN CODE TO FILL THE 'outputBytes' ARRAY.
