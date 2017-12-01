@@ -36,9 +36,6 @@ def compress( inputFile, outputFile ):
 
   img = netpbm.imread( inputFile ).astype('uint8')
   
-  print img.shape
-  print img[0,0,2]
-  
   # Compress the image
   #
   # REPLACE THIS WITH YOUR OWN CODE TO FILL THE 'outputBytes' ARRAY.
@@ -46,12 +43,50 @@ def compress( inputFile, outputFile ):
   startTime = time.time()
  
   outputBytes = bytearray()
+  #outputBytes = []
+  #construct base dictionary
+  dicti = {}
+  for i in range(0, 256):
+    dicti[chr(i)] = i
+  entry_num = 256
+  subsequence = ''
+  for c in range(1):
+    for y in range(img.shape[0]):
+      for x in range(img.shape[1]):
+        if (x-1 < 0):
+          pixel = chr(abs(img[y,x,c]-img[y,0,c]))
+          #pixel = chr(img[y,x,c])
+        else:
+          pixel = chr(abs(img[y,x,c]-img[y,x-1,c]))
+          #pixel = chr(img[y,x,c])
+        entry = subsequence + pixel
+        if (entry in dicti): #check if dictionary entry exists
+          subsequence = entry
+        else :
+          #print "\"" + str(dicti[str(subsequence)]) + "\"" + format(dicti[str(subsequence)], '#018b') + "\""
+          #outputBytes.append(format(dicti[str(subsequence)], '#018b'));        
+          #outputBytes.append(bytes.fromhex(dicti[str(subsequence)]));
+          output = dicti[str(subsequence)]
+          #low output
+          low_output = output & 0xFF;
+          #high output
+          high_output = (output >> 8) & 0xFF
+          outputBytes.append(low_output)
+          outputBytes.append(high_output)
+          #print str(dicti[str(subsequence)]) + " bytes: " + str(low_output) + " AND " + str(high_output)
+          #raw_input("")
+          dicti[entry] = entry_num
+          entry_num += 1
+          #if dictionary full, flush dictionary and restart
+          if (len(dicti) == 65536):
+            #construct base dictionary
+            dicti = {}
+            for i in range(0, 256):
+              dicti[chr(i)] = i
+            entry_num = 256
+          subsequence = pixel;
 
-  for y in range(img.shape[0]):
-    for x in range(img.shape[1]):
-      for c in range(img.shape[2]):
-        outputBytes.append( img[y,x,c] )
-
+  #print "number of dictionary entries: " + str(len(dicti))
   endTime = time.time()
 
   # Output the bytes
@@ -59,11 +94,10 @@ def compress( inputFile, outputFile ):
   # Include the 'headerText' to identify the type of file.  Include
   # the rows, columns, channels so that the image shape can be
   # reconstructed.
-
   outputFile.write( '%s\n'       % headerText )
   outputFile.write( '%d %d %d\n' % (img.shape[0], img.shape[1], img.shape[2]) )
+  #outputFile.write( ''.join(outputBytes) )
   outputFile.write( outputBytes )
-
   # Print information about the compression
   
   inSize  = img.shape[0] * img.shape[1] * img.shape[2]
