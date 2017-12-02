@@ -41,52 +41,89 @@ def compress( inputFile, outputFile ):
   # REPLACE THIS WITH YOUR OWN CODE TO FILL THE 'outputBytes' ARRAY.
 
   startTime = time.time()
- 
+  #create output array
+  
   outputBytes = bytearray()
-  #outputBytes = []
   #construct base dictionary
-  dicti = {}
+  dictionary = {}
   for i in range(0, 256):
-    dicti[chr(i)] = i
+    dictionary[chr(i)] = i
+    
+  #set index to start adding new entries
   entry_num = 256
+  #set base subsequence
   subsequence = ''
-  for c in range(1):
+  
+  #two dimensions means only single-channeled image
+  if (img.ndim <= 2):
     for y in range(img.shape[0]):
       for x in range(img.shape[1]):
         if (x-1 < 0):
-          pixel = chr(abs(img[y,x,c]-img[y,0,c]))
-          #pixel = chr(img[y,x,c])
+          #calculate pixel value using predictive encoding and cast to an ASCII character
+          #currently using the absolute value to avoid typecasting errors to ASCII character
+          pixel = chr(abs(img[y,x]-img[y,0]))
         else:
-          pixel = chr(abs(img[y,x,c]-img[y,x-1,c]))
-          #pixel = chr(img[y,x,c])
+          #last pixel within range
+          pixel = chr(abs(img[y,x]-img[y,x-1]))
         entry = subsequence + pixel
-        if (entry in dicti): #check if dictionary entry exists
+        if (entry in dictionary): #check if dictionary entry exists
           subsequence = entry
         else :
-          #print "\"" + str(dicti[str(subsequence)]) + "\"" + format(dicti[str(subsequence)], '#018b') + "\""
-          #outputBytes.append(format(dicti[str(subsequence)], '#018b'));        
-          #outputBytes.append(bytes.fromhex(dicti[str(subsequence)]));
-          output = dicti[str(subsequence)]
-          #low output
-          low_output = output & 0xFF;
-          #high output
-          high_output = (output >> 8) & 0xFF
-          outputBytes.append(low_output)
-          outputBytes.append(high_output)
-          #print str(dicti[str(subsequence)]) + " bytes: " + str(low_output) + " AND " + str(high_output)
-          #raw_input("")
-          dicti[entry] = entry_num
+          output = dictionary[str(subsequence)]
+          #assign two byteArray entries to each index written to output stream
+          #assign low byte to first entry
+          outputBytes.append(output & 0xFF)
+          #assign high byte to second entry
+          outputBytes.append((output >> 8) & 0xFF)
+          #Assign s+x subsequence to new dictionary entry
+          dictionary[entry] = entry_num
+          #increment index of dictionary
           entry_num += 1
           #if dictionary full, flush dictionary and restart
-          if (len(dicti) == 65536):
+          if (len(dictionary) == 65536):
             #construct base dictionary
-            dicti = {}
+            dictionary = {} 
             for i in range(0, 256):
-              dicti[chr(i)] = i
+              dictionary[chr(i)] = i
             entry_num = 256
+          #assign s=x  
           subsequence = pixel;
-
-  #print "number of dictionary entries: " + str(len(dicti))
+  #handle mult-channeled case
+  else :
+    for c in range(img.shape[2]):
+      for y in range(img.shape[0]):
+        for x in range(img.shape[1]):
+          if (x-1 < 0):
+            #calculate pixel value using predictive encoding and cast to an ASCII character
+            #currently using the absolute value to avoid typecasting errors to ASCII character
+            pixel = chr(abs(img[y,x,c]-img[y,0,c]))
+          else:
+            #last pixel within range
+            pixel = chr(abs(img[y,x,c]-img[y,x-1,c]))
+          entry = subsequence + pixel
+          if (entry in dictionary): #check if dictionary entry exists
+            subsequence = entry
+          else :
+            output = dictionary[str(subsequence)]
+            #assign two byteArray entries to each index written to output stream
+            #assign low byte to first entry
+            outputBytes.append(output & 0xFF)
+            #assign high byte to second entry
+            outputBytes.append((output >> 8) & 0xFF)
+            #Assign s+x subsequence to new dictionary entry
+            dictionary[entry] = entry_num
+            #increment index of dictionary
+            entry_num += 1
+            #if dictionary full, flush dictionary and restart
+            if (len(dictionary) == 65536):
+              #construct base dictionary
+              dictionary = {}
+              for i in range(0, 256):
+                dictionary[chr(i)] = i
+              entry_num = 256
+            #assign s=x  
+            subsequence = pixel;
+          
   endTime = time.time()
 
   # Output the bytes
@@ -95,12 +132,17 @@ def compress( inputFile, outputFile ):
   # the rows, columns, channels so that the image shape can be
   # reconstructed.
   outputFile.write( '%s\n'       % headerText )
-  outputFile.write( '%d %d %d\n' % (img.shape[0], img.shape[1], img.shape[2]) )
-  #outputFile.write( ''.join(outputBytes) )
+  if (img.ndim <= 2):
+    outputFile.write( '%d %d\n' % (img.shape[0], img.shape[1] ) )
+  else:
+    outputFile.write( '%d %d %d\n' % (img.shape[0], img.shape[1], img.shape[2]) )
   outputFile.write( outputBytes )
   # Print information about the compression
+  if (img.ndim <= 2):
+    inSize  = img.shape[0] * img.shape[1]
+  else:
+    inSize  = img.shape[0] * img.shape[1] * img.shape[2]
   
-  inSize  = img.shape[0] * img.shape[1] * img.shape[2]
   outSize = len(outputBytes)
 
   sys.stderr.write( 'Input size:         %d bytes\n' % inSize )
