@@ -99,8 +99,8 @@ def compress( inputFile, outputFile ):
         #raw_input()
         for x in range(img.shape[1]):
           #if (img[y,x,c]<10):
-          #  print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])
-          #  raw_input()
+          #print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])
+          #raw_input()
           if (x-1 < 0):
             #calculate pixel value using predictive encoding and cast to an ASCII character
             #currently using the absolute value to avoid typecasting errors to ASCII character
@@ -228,6 +228,8 @@ def uncompress( inputFile, outputFile ):
     if (initial_entry):
       value = (i << 8) + next(byteIter)
       S = dictionary[ value ]
+      print "value: " + str(value)
+      print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])+"\t"+str(orig[y,x,c])
       img[y,x,c] = int(S)
       x+=1
       initial_entry = False
@@ -256,16 +258,16 @@ def uncompress( inputFile, outputFile ):
         if count == 3:
           img[y,x,c] = int(printC)
           #if (y==81):
-          if (orig[y,x,c] != img[y,x,c]):
+          #if (orig[y,x,c] != img[y,x,c]):
             #print "OutString: " + outString
             #print "startIndex: " + str(startindex)
             #print "endIndex: " + str(endindex)
-            print "code: " + str(code) 
-            print "In dictionary?: " + str(fromDict)
-            print "S: " + S
-            print "T: " + T
-            print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])+"\t"+str(orig[y,x,c])
-            raw_input()
+            #print "code: " + str(code) 
+            #print "In dictionary?: " + str(fromDict)
+            #print "S: " + S
+            #print "T: " + T
+            #print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])+"\t"+str(orig[y,x,c])
+            #raw_input()
           printC = ''
           count = 0
           if (x == columns-1):
