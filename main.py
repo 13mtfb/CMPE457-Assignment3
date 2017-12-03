@@ -47,7 +47,12 @@ def compress( inputFile, outputFile ):
   #construct base dictionary
   dictionary = {}
   for i in range(0, 256):
-    dictionary[str(i)] = i
+    if (i < 10):
+      dictionary["00"+str(i)] = i
+    elif (i < 100):
+      dictionary["0"+str(i)] = i
+    else:
+      dictionary[str(i)] = i
   #set index to start adding new entries
   entry_num = 256
   #set base subsequence
@@ -79,7 +84,7 @@ def compress( inputFile, outputFile ):
           #increment index of dictionary
           entry_num += 1
           #if dictionary full, flush dictionary and restart
-          if (len(dictionary) == 65536):
+          if (len(dictionary) == 65535):
             #construct base dictionary
             dictionary = {} 
             for i in range(0, 256):
@@ -91,33 +96,36 @@ def compress( inputFile, outputFile ):
   else :
     for c in range(img.shape[2]):
       for y in range(img.shape[0]):
+        #raw_input()
         for x in range(img.shape[1]):
-          #if (img[y,x,c] != 255):
-          #  print "dictionary index: " + str(entry_num)
-          #  print "dimensions: " + "[" + str(y) + "," + str(x) + "," + str(c) + "]" + " = " + str(img[y,x,c])
+          #if (img[y,x,c]<10):
+          #  print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])
           #  raw_input()
           if (x-1 < 0):
             #calculate pixel value using predictive encoding and cast to an ASCII character
             #currently using the absolute value to avoid typecasting errors to ASCII character
             #pixel = chr(abs(img[y,x,c]-img[y,0,c]))
-            pixel = str(img[y,x,c])
+            if (img[y,x,c] < 10):
+              pixel = "00" + str(img[y,x,c])
+            elif(img[y,x,c] <100):
+              pixel = "0" + str(img[y,x,c])
+            else:
+              pixel = str(img[y,x,c])
           else:
             #last pixel within range
             #pixel = chr(abs(img[y,x,c]-img[y,x-1,c]))
-            pixel = str(img[y,x,c])
-            #if (img[y,x,c] != 255):
-            #  print (str(img[y,x,c]))
-            #  raw_input()
+            if (img[y,x,c] < 10):
+              pixel = "00" + str(img[y,x,c])
+            elif(img[y,x,c] <100):
+              pixel = "0" + str(img[y,x,c])
+            else:
+              pixel = str(img[y,x,c])
           entry = subsequence + pixel
           #print "entry: " + entry
           if (entry in dictionary): #check if dictionary entry exists
             subsequence = entry
           else :
             output = dictionary[str(subsequence)]
-            #print "dictionary["+subsequence+"]"+"="+str(output)
-            #print "pixel: " + str(pixel)
-            #print "output: " + str(output)
-            #raw_input()
             #assign two byteArray entries to each index written to output stream
             #assign high byte to first entry
             outputBytes.append((output >> 8) & 0xFF)
@@ -128,11 +136,16 @@ def compress( inputFile, outputFile ):
             #increment index of dictionary
             entry_num += 1
             #if dictionary full, flush dictionary and restart
-            if (len(dictionary) == 65536):
+            if (len(dictionary) == 65535):
               #construct base dictionary
               dictionary = {}
               for i in range(0, 256):
-                dictionary[str(i)] = i
+                if (i < 10):
+                  dictionary["00"+str(i)] = i
+                elif (i < 100):
+                  dictionary["0"+str(i)] = i
+                else:
+                  dictionary[str(i)] = i
               entry_num = 256
             #assign s=x  
             subsequence = pixel;
@@ -190,86 +203,101 @@ def uncompress( inputFile, outputFile ):
   startTime = time.time()
 
   img = np.empty( [rows,columns,channels], dtype=np.uint8 )
+  #compare with input image
+  orig = netpbm.imread( "images/cortex.pnm" ).astype('uint8')
   byteIter = iter(inputBytes)
   
   #construct base dictionary
   dictionary = {}
   for i in range(0, 256):
-    dictionary[str(i)] = i
+    if (i < 10):
+      dictionary[i] = "00" + str(i)
+    elif (i < 100):
+      dictionary[i] = "0" + str(i)
+    else:
+      dictionary[i] = str(i)
   #set index to start adding new entries
   entry_num = 256
   initial_entry = True;
-  
+  #starting indexes for image recreation
   y = 0
   x = 0
   c = 0
   count = 0
-    #for y in range(rows):
-    #for x in range(columns):
-    #for c in range(channels):
-  print "y limit: " + str(rows)
-  print "x limit: " + str(columns)
-  print "c limit: " + str(channels)
-  
-  
-  done = 0
   for i in byteIter:
     if (initial_entry):
       value = (i << 8) + next(byteIter)
-      print "input: " + str(value)
-      S = dictionary[ str(value) ]
-      img[y,x,c] = S
+      S = dictionary[ value ]
+      img[y,x,c] = int(S)
       x+=1
-      #print "code: " + str(value) + ". dictionary entry: " + str(S)
-      count+=1
       initial_entry = False
     else:
       #get dictionary entry of next code
-      code = str( (i << 8) + next(byteIter) )
-      #print "input: " + code
-      #raw_input()
+      code = (i << 8) + next(byteIter)
+      #print "input: " + str(code)
+      
       if (code in dictionary):
+        #print "does it get here??"
         #T is dictionary lookup of next code
-        T = dictionary[code]
-      else :
+        T = (dictionary[code])
+        fromDict=1
+      else:
         #otherwise T is S + firstChar(S)
-        T = (S << 8) + (S & 0xFF)
+        #firstChar = int(((bin(S))[2:10]),2)
+        #T = ((S << 8) + (firstChar))     
+        T = S + S[0:3]
+        fromDict=0
       #output T
-      #img[y,x,c] = T
-      out = T
-      while (out > 0):
-        img[y,x,c] = (out & 0xFF)
-        if (x == columns-1):
-          x = 0
-          if (y == rows-1):
-            y = 0
-            if (c == channels-1):
-              done = 1#should be done
-            else:
-              c+=1
-          else:
-            y+=1
-        else: 
-          x+=1
-        #print "output: " + str(out & 0xFF)
-        if ( (out&0xFF) != 255):
-          print "dictionary index: " + str(entry_num)
-          print "dimensions: " + "[" + str(y) + "," + str(x) + "," + str(c) + "]" + " = " + str(out & 0xFF)
-          raw_input()
-        out = (out >> 8)
+      printC = ''
+      index = 0
+      for item in T:
+        printC+=item
         count+=1
-      #raw_input()
-      #control indexing for y, x and c 
-      #TODO
+        if count == 3:
+          img[y,x,c] = int(printC)
+          #if (y==81):
+          if (orig[y,x,c] != img[y,x,c]):
+            #print "OutString: " + outString
+            #print "startIndex: " + str(startindex)
+            #print "endIndex: " + str(endindex)
+            print "code: " + str(code) 
+            print "In dictionary?: " + str(fromDict)
+            print "S: " + S
+            print "T: " + T
+            print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])+"\t"+str(orig[y,x,c])
+            raw_input()
+          printC = ''
+          count = 0
+          if (x == columns-1):
+            x = 0
+            if (y == rows-1):
+              y = 0
+              if (c == channels-1):
+                done = 1#should be done
+              else:
+                c+=1
+            else:
+              y+=1
+              #raw_input()
+          else: 
+            x+=1  
       #append S + FirstChar(T) to dictionary
-      dictionary[ str((S<<8)+(T & 0xFF)) ] = entry_num
+      #print "dictionary["+str((S<<8)+(T & 0xFF))+"]"+"="+str(entry_num)
+      #firstChar = int(((bin(T))[2:10]),2)
+      #dictionary[ entry_num ] =  (S<<8)+(firstChar)
+      dictionary[entry_num ] = S + T[0:3]
       entry_num += 1
       #if dictionary full, flush dictionary and restart
-      if (len(dictionary) == 65536):
+      if (len(dictionary) == 65535):
         #construct base dictionary
         dictionary = {}
         for i in range(0, 256):
-          dictionary[str(i)] = i
+          if (i < 10):
+            dictionary[i] = "00" + str(i)
+          elif (i < 100):
+            dictionary[i] = "0" + str(i)
+          else:
+            dictionary[i] = str(i)
         entry_num = 256
       #Assign S=T
       S = T
