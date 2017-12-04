@@ -3,3 +3,4 @@ matplotlib
 netpbm.pyc
 *.pnm
 *.cmp
+*.cpm

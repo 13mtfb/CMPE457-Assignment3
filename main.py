@@ -46,6 +46,7 @@ def compress( inputFile, outputFile ):
   outputBytes = bytearray()
   #construct base dictionary
   dictionary = {}
+  ##Need to padd strings so that all base dictionary entries have 3 characters
   for i in range(0, 256):
     if (i < 10):
       dictionary["00"+str(i)] = i
@@ -65,20 +66,31 @@ def compress( inputFile, outputFile ):
         if (x-1 < 0):
           #calculate pixel value using predictive encoding and cast to an ASCII character
           #currently using the absolute value to avoid typecasting errors to ASCII character
-          pixel = chr(abs(img[y,x]-img[y,0]))
+          if (img[y,x] < 10):
+            pixel = "00" + str(img[y,x])
+          elif(img[y,x] <100):
+            pixel = "0" + str(img[y,x])
+          else:
+            pixel = str(img[y,x])
         else:
+          if (img[y,x] < 10):
+            pixel = "00" + str(img[y,x])
+          elif(img[y,x] <100):
+            pixel = "0" + str(img[y,x])
+          else:
+            pixel = str(img[y,x])
           #last pixel within range
-          pixel = chr(abs(img[y,x]-img[y,x-1]))
+          #pixel = chr(abs(img[y,x]-img[y,x-1]))
         entry = subsequence + pixel
         if (entry in dictionary): #check if dictionary entry exists
           subsequence = entry
         else :
           output = dictionary[str(subsequence)]
           #assign two byteArray entries to each index written to output stream
-          #assign low byte to first entry
-          outputBytes.append(output & 0xFF)
-          #assign high byte to second entry
+          #assign high byte to first entry
           outputBytes.append((output >> 8) & 0xFF)
+          #assign low byte to second entry
+          outputBytes.append(output & 0xFF)
           #Assign s+x subsequence to new dictionary entry
           dictionary[entry] = entry_num
           #increment index of dictionary
@@ -88,7 +100,12 @@ def compress( inputFile, outputFile ):
             #construct base dictionary
             dictionary = {} 
             for i in range(0, 256):
-              dictionary[chr(i)] = i
+              if (i < 10):
+                dictionary["00"+str(i)] = i
+              elif (i < 100):
+                dictionary["0"+str(i)] = i
+              else:
+                dictionary[str(i)] = i
             entry_num = 256
           #assign s=x  
           subsequence = pixel;
@@ -96,11 +113,7 @@ def compress( inputFile, outputFile ):
   else :
     for c in range(img.shape[2]):
       for y in range(img.shape[0]):
-        #raw_input()
         for x in range(img.shape[1]):
-          #if (img[y,x,c]<10):
-          #print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])
-          #raw_input()
           if (x-1 < 0):
             #calculate pixel value using predictive encoding and cast to an ASCII character
             #currently using the absolute value to avoid typecasting errors to ASCII character
@@ -121,7 +134,6 @@ def compress( inputFile, outputFile ):
             else:
               pixel = str(img[y,x,c])
           entry = subsequence + pixel
-          #print "entry: " + entry
           if (entry in dictionary): #check if dictionary entry exists
             subsequence = entry
           else :
@@ -159,7 +171,7 @@ def compress( inputFile, outputFile ):
   # reconstructed.
   outputFile.write( '%s\n'       % headerText )
   if (img.ndim <= 2):
-    outputFile.write( '%d %d\n' % (img.shape[0], img.shape[1] ) )
+    outputFile.write( '%d %d %d\n' % (img.shape[0], img.shape[1], 0 ) )
   else:
     outputFile.write( '%d %d %d\n' % (img.shape[0], img.shape[1], img.shape[2]) )
   outputFile.write( outputBytes )
@@ -189,9 +201,8 @@ def uncompress( inputFile, outputFile ):
     sys.exit(1)
     
   # Read the rows, columns, and channels.  
-
+  #If channels is 0, then image is single channeled
   rows, columns, channels = [ int(x) for x in inputFile.readline().split() ]
-
   # Read the raw bytes.
 
   inputBytes = bytearray(inputFile.read())
@@ -201,10 +212,10 @@ def uncompress( inputFile, outputFile ):
   # REPLACE THIS WITH YOUR OWN CODE TO CONVERT THE 'inputBytes' ARRAY INTO AN IMAGE IN 'img'.
 
   startTime = time.time()
-
-  img = np.empty( [rows,columns,channels], dtype=np.uint8 )
-  #compare with input image
-  orig = netpbm.imread( "images/cortex.pnm" ).astype('uint8')
+  if (channels != 0):
+    img = np.empty( [rows,columns,channels], dtype=np.uint8 )
+  else:
+    img = np.empty( [rows,columns], dtype=np.uint8 )
   byteIter = iter(inputBytes)
   
   #construct base dictionary
@@ -228,27 +239,21 @@ def uncompress( inputFile, outputFile ):
     if (initial_entry):
       value = (i << 8) + next(byteIter)
       S = dictionary[ value ]
-      print "value: " + str(value)
-      print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])+"\t"+str(orig[y,x,c])
-      img[y,x,c] = int(S)
+      if (channels!=0):
+        img[y,x,c] = int(S)
+      else:
+        img[y,x] = int(S)
       x+=1
       initial_entry = False
     else:
       #get dictionary entry of next code
       code = (i << 8) + next(byteIter)
-      #print "input: " + str(code)
-      
       if (code in dictionary):
-        #print "does it get here??"
         #T is dictionary lookup of next code
         T = (dictionary[code])
-        fromDict=1
       else:
-        #otherwise T is S + firstChar(S)
-        #firstChar = int(((bin(S))[2:10]),2)
-        #T = ((S << 8) + (firstChar))     
+        #otherwise T is S + firstChar(S) 
         T = S + S[0:3]
-        fromDict=0
       #output T
       printC = ''
       index = 0
@@ -256,18 +261,10 @@ def uncompress( inputFile, outputFile ):
         printC+=item
         count+=1
         if count == 3:
-          img[y,x,c] = int(printC)
-          #if (y==81):
-          #if (orig[y,x,c] != img[y,x,c]):
-            #print "OutString: " + outString
-            #print "startIndex: " + str(startindex)
-            #print "endIndex: " + str(endindex)
-            #print "code: " + str(code) 
-            #print "In dictionary?: " + str(fromDict)
-            #print "S: " + S
-            #print "T: " + T
-            #print "["+str(y)+","+str(x)+","+str(c)+"]="+str(img[y,x,c])+"\t"+str(orig[y,x,c])
-            #raw_input()
+          if (channels!=0):
+            img[y,x,c] = int(printC)
+          else:
+            img[y,x] = int(printC)
           printC = ''
           count = 0
           if (x == columns-1):
@@ -280,13 +277,9 @@ def uncompress( inputFile, outputFile ):
                 c+=1
             else:
               y+=1
-              #raw_input()
           else: 
             x+=1  
       #append S + FirstChar(T) to dictionary
-      #print "dictionary["+str((S<<8)+(T & 0xFF))+"]"+"="+str(entry_num)
-      #firstChar = int(((bin(T))[2:10]),2)
-      #dictionary[ entry_num ] =  (S<<8)+(firstChar)
       dictionary[entry_num ] = S + T[0:3]
       entry_num += 1
       #if dictionary full, flush dictionary and restart
@@ -303,8 +296,7 @@ def uncompress( inputFile, outputFile ):
         entry_num = 256
       #Assign S=T
       S = T
-        
-  print "number of outputs is " + str(count)     
+          
   endTime = time.time()
 
   # Output the image
