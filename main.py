@@ -66,19 +66,9 @@ def compress( inputFile, outputFile ):
         if (x-1 < 0):
           #calculate pixel value using predictive encoding and cast to an ASCII character
           #currently using the absolute value to avoid typecasting errors to ASCII character
-          if (img[y,x] < 10):
-            pixel = "00" + str(img[y,x])
-          elif(img[y,x] <100):
-            pixel = "0" + str(img[y,x])
-          else:
-            pixel = str(img[y,x])
+          pixel = str(img[y,x]).zfill(3)
         else:
-          if (img[y,x] < 10):
-            pixel = "00" + str(img[y,x])
-          elif(img[y,x] <100):
-            pixel = "0" + str(img[y,x])
-          else:
-            pixel = str(img[y,x])
+          pixel = str(img[y,x]).zfill(3)
           #last pixel within range
           #pixel = chr(abs(img[y,x]-img[y,x-1]))
         entry = subsequence + pixel
@@ -118,21 +108,11 @@ def compress( inputFile, outputFile ):
             #calculate pixel value using predictive encoding and cast to an ASCII character
             #currently using the absolute value to avoid typecasting errors to ASCII character
             #pixel = chr(abs(img[y,x,c]-img[y,0,c]))
-            if (img[y,x,c] < 10):
-              pixel = "00" + str(img[y,x,c])
-            elif(img[y,x,c] <100):
-              pixel = "0" + str(img[y,x,c])
-            else:
-              pixel = str(img[y,x,c])
+            pixel = str(img[y,x,c]).zfill(3)
           else:
+            pixel = str(img[y,x,c]).zfill(3)
             #last pixel within range
             #pixel = chr(abs(img[y,x,c]-img[y,x-1,c]))
-            if (img[y,x,c] < 10):
-              pixel = "00" + str(img[y,x,c])
-            elif(img[y,x,c] <100):
-              pixel = "0" + str(img[y,x,c])
-            else:
-              pixel = str(img[y,x,c])
           entry = subsequence + pixel
           if (entry in dictionary): #check if dictionary entry exists
             subsequence = entry
