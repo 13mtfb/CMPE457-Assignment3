@@ -38,7 +38,6 @@ def compress( inputFile, outputFile ):
   
   # Compress the image
   #
-  # REPLACE THIS WITH YOUR OWN CODE TO FILL THE 'outputBytes' ARRAY.
 
   startTime = time.time()
   #create output array
@@ -47,6 +46,7 @@ def compress( inputFile, outputFile ):
   #construct base dictionary
   dictionary = {}
   ##Need to padd strings so that all base dictionary entries have 3 characters
+  ##Create 511 entries due to adding 255 to the predictive encoded values to keep them positive
   for i in range(0, 511):
     if (i < 10):
       dictionary["00"+str(i)] = i
@@ -64,12 +64,14 @@ def compress( inputFile, outputFile ):
     for y in range(img.shape[0]):
       for x in range(img.shape[1]):
         if (x==0):
-          #calculate pixel value using predictive encoding and cast to an ASCII character
+          #calculate pixel value and cast to string
           pixel = str(img[y,x]).zfill(3)
         else:
+          #calculate all non first-column pixels using predictive encoding
+          #need to cast the uint8 image values to int to avoid overflow
+          #add 255 to keep the result positive
+          #pad string with zeros if needed
           pixel = str((int(img[y,x])-int(img[y,x-1]))+255).zfill(3)
-          #last pixel within range
-          #pixel = chr(abs(img[y,x]-img[y,x-1]))
         entry = subsequence + pixel
         if (entry in dictionary): #check if dictionary entry exists
           subsequence = entry
@@ -84,7 +86,7 @@ def compress( inputFile, outputFile ):
           dictionary[entry] = entry_num
           #increment index of dictionary
           entry_num += 1
-          #if dictionary full, flush dictionary and restart
+          #if dictionary full (i.e. will exceed two bytes, flush dictionary and restart
           if (len(dictionary) == 65535):
             #construct base dictionary
             dictionary = {} 
@@ -104,14 +106,14 @@ def compress( inputFile, outputFile ):
       for y in range(img.shape[0]):
         for x in range(img.shape[1]):
           if (x==0):
-            #calculate pixel value using predictive encoding and cast to an ASCII character
-            #currently using the absolute value to avoid typecasting errors to ASCII character
-            #pixel = chr(abs(img[y,x,c]-img[y,0,c]))
+            #calculate pixel value and cast to string            
             pixel = str(img[y,x,c]).zfill(3)
           else:
+            #calculate all non first-column pixels using predictive encoding
+            #need to cast the uint8 image values to int to avoid overflow
+            #add 255 to keep the result positive
+            #pad string with zeros if needed
             pixel = str((int(img[y,x,c])-int(img[y,x-1,c]))+255).zfill(3)
-            #last pixel within range
-            #pixel = chr(abs(img[y,x,c]-img[y,x-1,c]))
           entry = subsequence + pixel
           if (entry in dictionary): #check if dictionary entry exists
             subsequence = entry
@@ -188,16 +190,16 @@ def uncompress( inputFile, outputFile ):
 
   # Build the image
   #
-  # REPLACE THIS WITH YOUR OWN CODE TO CONVERT THE 'inputBytes' ARRAY INTO AN IMAGE IN 'img'.
 
   startTime = time.time()
+  #create output img array by checking if channel value is non zero
   if (channels != 0):
     img = np.empty( [rows,columns,channels], dtype=np.uint8 )
   else:
     img = np.empty( [rows,columns], dtype=np.uint8 )
   byteIter = iter(inputBytes)
   
-  #construct base dictionary
+  #construct base dictionary identical to one used in compress()
   dictionary = {}
   for i in range(0, 511):
     if (i < 10):
@@ -214,6 +216,7 @@ def uncompress( inputFile, outputFile ):
   x = 0
   c = 0
   count = 0
+  #predictive encode variable used to detect first column pixel and therefore just output that pixel
   pencode=0
   for i in byteIter:
     if (initial_entry):
@@ -221,7 +224,6 @@ def uncompress( inputFile, outputFile ):
       S = dictionary[ value ]
       if (channels!=0):
         img[y,x,c] = int(S)
-        #print "pixel " + str(img[y,x,c])
       else:
         img[y,x] = int(S)
       x+=1
@@ -238,10 +240,13 @@ def uncompress( inputFile, outputFile ):
       #output T
       printC = ''
       index = 0
+      #for loop is used to print out 3-character substrings of T
+      #this is the reason that dictionary and input is 3 zero padded
       for item in T:
         printC+=item
         count+=1
         if count == 3:
+          #channels!=0 is used to print correct array indices for single channeled images
           if pencode==1:
             if (channels!=0):
               img[y,x,c] = int(printC)
@@ -249,6 +254,7 @@ def uncompress( inputFile, outputFile ):
               img[y,x] = int(printC)
           else:
             if (channels!=0):
+              #use predictive decoding by added previous pixel value to output (and subtracting 255)
               img[y,x,c] = int(printC)+img[y,x-1,c]-255
             else:
               img[y,x] = int(printC)+img[y,x-1]-255
