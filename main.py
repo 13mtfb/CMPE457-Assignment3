@@ -47,7 +47,7 @@ def compress( inputFile, outputFile ):
   #construct base dictionary
   dictionary = {}
   ##Need to padd strings so that all base dictionary entries have 3 characters
-  for i in range(0, 256):
+  for i in range(0, 511):
     if (i < 10):
       dictionary["00"+str(i)] = i
     elif (i < 100):
@@ -55,7 +55,7 @@ def compress( inputFile, outputFile ):
     else:
       dictionary[str(i)] = i
   #set index to start adding new entries
-  entry_num = 256
+  entry_num = 511
   #set base subsequence
   subsequence = ''
   
@@ -63,12 +63,11 @@ def compress( inputFile, outputFile ):
   if (img.ndim <= 2):
     for y in range(img.shape[0]):
       for x in range(img.shape[1]):
-        if (x-1 < 0):
+        if (x==0):
           #calculate pixel value using predictive encoding and cast to an ASCII character
-          #currently using the absolute value to avoid typecasting errors to ASCII character
           pixel = str(img[y,x]).zfill(3)
         else:
-          pixel = str(img[y,x]).zfill(3)
+          pixel = str((int(img[y,x])-int(img[y,x-1]))+255).zfill(3)
           #last pixel within range
           #pixel = chr(abs(img[y,x]-img[y,x-1]))
         entry = subsequence + pixel
@@ -89,14 +88,14 @@ def compress( inputFile, outputFile ):
           if (len(dictionary) == 65535):
             #construct base dictionary
             dictionary = {} 
-            for i in range(0, 256):
+            for i in range(0, 511):
               if (i < 10):
                 dictionary["00"+str(i)] = i
               elif (i < 100):
                 dictionary["0"+str(i)] = i
               else:
                 dictionary[str(i)] = i
-            entry_num = 256
+            entry_num = 511
           #assign s=x  
           subsequence = pixel;
   #handle mult-channeled case
@@ -104,13 +103,13 @@ def compress( inputFile, outputFile ):
     for c in range(img.shape[2]):
       for y in range(img.shape[0]):
         for x in range(img.shape[1]):
-          if (x-1 < 0):
+          if (x==0):
             #calculate pixel value using predictive encoding and cast to an ASCII character
             #currently using the absolute value to avoid typecasting errors to ASCII character
             #pixel = chr(abs(img[y,x,c]-img[y,0,c]))
             pixel = str(img[y,x,c]).zfill(3)
           else:
-            pixel = str(img[y,x,c]).zfill(3)
+            pixel = str((int(img[y,x,c])-int(img[y,x-1,c]))+255).zfill(3)
             #last pixel within range
             #pixel = chr(abs(img[y,x,c]-img[y,x-1,c]))
           entry = subsequence + pixel
@@ -131,14 +130,14 @@ def compress( inputFile, outputFile ):
             if (len(dictionary) == 65535):
               #construct base dictionary
               dictionary = {}
-              for i in range(0, 256):
+              for i in range(0, 511):
                 if (i < 10):
                   dictionary["00"+str(i)] = i
                 elif (i < 100):
                   dictionary["0"+str(i)] = i
                 else:
                   dictionary[str(i)] = i
-              entry_num = 256
+              entry_num = 511
             #assign s=x  
             subsequence = pixel;
           
@@ -200,7 +199,7 @@ def uncompress( inputFile, outputFile ):
   
   #construct base dictionary
   dictionary = {}
-  for i in range(0, 256):
+  for i in range(0, 511):
     if (i < 10):
       dictionary[i] = "00" + str(i)
     elif (i < 100):
@@ -208,19 +207,21 @@ def uncompress( inputFile, outputFile ):
     else:
       dictionary[i] = str(i)
   #set index to start adding new entries
-  entry_num = 256
+  entry_num = 511
   initial_entry = True;
   #starting indexes for image recreation
   y = 0
   x = 0
   c = 0
   count = 0
+  pencode=0
   for i in byteIter:
     if (initial_entry):
       value = (i << 8) + next(byteIter)
       S = dictionary[ value ]
       if (channels!=0):
         img[y,x,c] = int(S)
+        #print "pixel " + str(img[y,x,c])
       else:
         img[y,x] = int(S)
       x+=1
@@ -241,14 +242,19 @@ def uncompress( inputFile, outputFile ):
         printC+=item
         count+=1
         if count == 3:
-          if (channels!=0):
-            img[y,x,c] = int(printC)
+          if pencode==1:
+            if (channels!=0):
+              img[y,x,c] = int(printC)
+            else:
+              img[y,x] = int(printC)
           else:
-            img[y,x] = int(printC)
-          printC = ''
-          count = 0
+            if (channels!=0):
+              img[y,x,c] = int(printC)+img[y,x-1,c]-255
+            else:
+              img[y,x] = int(printC)+img[y,x-1]-255
           if (x == columns-1):
             x = 0
+            pencode=1
             if (y == rows-1):
               y = 0
               if (c == channels-1):
@@ -259,6 +265,9 @@ def uncompress( inputFile, outputFile ):
               y+=1
           else: 
             x+=1  
+            pencode=0
+          printC = ''
+          count = 0
       #append S + FirstChar(T) to dictionary
       dictionary[entry_num ] = S + T[0:3]
       entry_num += 1
@@ -266,14 +275,14 @@ def uncompress( inputFile, outputFile ):
       if (len(dictionary) == 65535):
         #construct base dictionary
         dictionary = {}
-        for i in range(0, 256):
+        for i in range(0, 511):
           if (i < 10):
             dictionary[i] = "00" + str(i)
           elif (i < 100):
             dictionary[i] = "0" + str(i)
           else:
             dictionary[i] = str(i)
-        entry_num = 256
+        entry_num = 511
       #Assign S=T
       S = T
           

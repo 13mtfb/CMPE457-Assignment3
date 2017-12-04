@@ -1,0 +1,78 @@
+##################################################################
+With no predictive encoding and inefficient string concatenation
+##################################################################
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/barbara.pnm barbara.cmp
+Input size:         786432 bytes
+Output size:        780124 bytes
+Compression factor: 1.01
+Compression time:   7.83 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/cortex.pnm cortex.cmp
+Input size:         1961712 bytes
+Output size:        976106 bytes
+Compression factor: 2.01
+Compression time:   18.76 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/crest.pnm crest.cmp
+Input size:         5472000 bytes
+Output size:        401608 bytes
+Compression factor: 13.63
+Compression time:   51.90 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/mandrill.pnm mandrill.cmp
+Input size:         814080 bytes
+Output size:        776462 bytes
+Compression factor: 1.05
+Compression time:   7.81 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/noise.pnm noise.cmp
+Input size:         1048576 bytes
+Output size:        1356372 bytes
+Compression factor: 0.77
+Compression time:   10.91 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u barbara.cmp barabara.cpm
+Uncompression time: 1.17 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u cortex.cmp cortex.cpm
+Uncompression time: 2.54 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u crest.cmp crest.cpm
+Uncompression time: 5.22 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u mandrill.cmp mandrill.cpm
+Uncompression time: 1.21 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u noise.cmp noise.cpm
+Uncompression time: 1.74 seconds
+
+##################################################################
+Final Runs
+##################################################################
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assnt3$ python main.py c images/barbara.pnm barbara.cmp
+Input size:         786432 bytes
+Output size:        685594 bytes
+Compression factor: 1.15
+Compression time:   1.14 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/cortex.pnm cortex.cmp
+Input size:         1961712 bytes
+Output size:        769776 bytes
+Compression factor: 2.55
+Compression time:   2.90 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/crest.pnm crest.cmp
+Input size:         5472000 bytes
+Output size:        469106 bytes
+Compression factor: 11.66
+Compression time:   6.94 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/mandrill.pnm mandrill.cmp
+Input size:         814080 bytes
+Output size:        670454 bytes
+Compression factor: 1.21
+Compression time:   1.26 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py c images/noise.pnm noise.cmp
+Input size:         1048576 bytes
+Output size:        1386758 bytes
+Compression factor: 0.76
+Compression time:   1.67 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u barbara.cmp barbara.cpm
+Uncompression time: 4.71 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u cortex.cmp cortex.cpm
+Uncompression time: 10.79 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u crest.cmp crest.cpm
+Uncompression time: 28.69 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u mandrill.cmp mandrill.cpm
+Uncompression time: 4.80 seconds
+everest@Everest:~/Documents/Computer Engineering/CMPE 457/CMPE457-Assignment3$ python main.py u noise.cmp noise.cpm
+Uncompression time: 7.05 seconds
+
